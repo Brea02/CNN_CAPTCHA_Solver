@@ -6,3 +6,4 @@ Created on Wed Mar 26 09:06:53 2025
 """
 
 print("This is a test to see if file can be uploaded and grabbed from github")
+print("This is a test to see if spyder can commit to github")
