@@ -2,7 +2,19 @@
 """
 Created on Wed Mar 26 09:06:53 2025
 
-@author: brean
+@author: Breanna Sproul
+
+ECCS4621.01 Deep Learning CAPCHA Assignment
+Objective: In this assignment, you will implement a Convolutional Neural Network
+(CNN) or a variant of it (such as CNN + LSTM, Attention-based CNN, etc.) to solve
+CAPTCHA recognition problems. 
+
+Currently:
+    Copied the CNN model from the worksheet for a base to work on
+Needs:
+    get public CAPCHA dataset --listed in assignment
+    get it semi working on CAPCHA dataset
+    Achieve approximately 80% accuracy on the test set -- listed in assignment
 """
 
 #simple CNN model from the worksheet
