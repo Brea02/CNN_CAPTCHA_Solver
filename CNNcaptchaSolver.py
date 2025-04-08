@@ -11,16 +11,15 @@ CAPTCHA recognition problems.
 Using Kaggle dataset available in the Github repository
 
 Currently:
-    can access the images from dataset and made labels for it
-    shows an image and its corresponding label
-    model is not accepting the labels so might have not done labels right{might fix itself when separating char}
+    dataset is incorporated, images and labels are separated and usable
+    model and accuracy plot at the end works with dataset
 Needs:
-    get the model to accept labels and run dataset
-    add processing step to separate each image into individual character components
+    val_accuracy is still low {~0.50 on high end}, so need to mess with model for better accuracy
+    fix overfitting
     Achieve approximately 80% accuracy on the test set -- listed in assignment
-    rewrite some code to make it easier for other computers to use
+    rewrite some code to make it easier for other computers to use{or a lot of comments}
+    fix-up the samples for easier loading?
 """
-
 #import needed libraries
 import tensorflow as tf
 from tensorflow.keras import datasets, layers, models
@@ -30,29 +29,43 @@ import numpy as np
 import cv2 
 from sklearn.model_selection import train_test_split
 
-#get the dataset path and set up a way to access images
+#get the dataset path and set up a way to access the image files
+#if you download from our Github repo - unzip and make sure the extra sample folder is deleted before pasting your directory here
 #data_dir = 'your directory here'
-data_dir = 'C:/Users/brean/Documents/captcha_samples'
-image_files = [os.path.join(data_dir, f) for f in os.listdir(data_dir) if f.endswith(('.jpg', '.png'))]
-
+data_dir = 'C:/Users/brean/Documents/captcha_samples' #this is what mine is, but you will have to change it to your directory
+image_files = [os.path.join(data_dir, f) for f in os.listdir(data_dir) if f.endswith(('.jpg', '.png'))] 
 
 #set up the labels using dataset image filenames
-#!! I might have done this wrong and need a different type of labels for the model to work
-unrefined_labels = [img_path.split('C:/Users/brean/Documents/captcha_samples\\')[-1] for img_path in image_files]
-labels = [img_path.split('.')[0] for img_path in unrefined_labels]
+#unrefined_labels = [img_path.split('the first part of your directory goes here')[-1] for img_path in image_files] #once again paste your directory up to the character right before the image label starts
+unrefined_labels = [img_path.split('C:/Users/brean/Documents/captcha_samples\\')[-1] for img_path in image_files] #removes front part of string
+labels = [img_path.split('.')[0] for img_path in unrefined_labels] #removes the last .png at the end to get only the char ID of image
 
-#data splitting
-train_images, test_images, train_labels, test_labels = train_test_split(image_files, labels, train_size = 0.85, test_size=0.15, random_state=0)
+#OneHot Encoding to make labels that fit the model input requirement of numerical data instead of strings
+label_size = 5
+enc = tf.keras.layers.TextVectorization(split="character", output_mode="int")
+enc.adapt(labels)
+#print vocab to check that encoder is working
+print(dict((str(v), k) for k,v in enumerate(enc.get_vocabulary())))
+vocab_size = len(enc.get_vocabulary())
+print("Original Labels:")
+print(labels[:2])
+Y = enc(labels)
+print(Y[:2])
+Y = tf.keras.utils.to_categorical(Y, num_classes=vocab_size)
+Y[:2]
+#Y = Y.numpy() #for some reason Google Colab needed this line, but Spyder didnt. If your program throws a fit about no numpy array then uncomment this
+
+#data splitting to training and testing data
+train_images, test_images, train_labels, test_labels = train_test_split(image_files, Y, train_size = 0.85, test_size=0.15, random_state=0)
 
 #load and preprocess images to be in numpy array
 def load_and_preprocess_images(image_files):
-  """Loads images from file paths, resizes and normalizes them."""
+  #Loads images from file paths, resizes and normalizes them
   images = []
   for img_path in image_files:
     img = cv2.imread(img_path)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # Convert from BGR to RGB
-    #img = cv2.resize(img, (32, 32))  # Resize to match input shape, but looks really bad
-    img = img.astype('float32') / 255.0  # Normalize pixel values
+    #img = img.astype('float32') / 255.0  # Normalize pixel values
     images.append(img)
   return np.array(images)
 #use ^ to turn image file path to image data in a numpy array
@@ -68,25 +81,35 @@ test_images = load_and_preprocess_images(test_images)
 plt.imshow(train_images[0])
 plt.axis('off')
 plt.show()
-print(train_labels[0])
+print(f"Label: {train_labels[0]}")
 
+#look at the shape of the images and labels for correct model size adjustment
+print(f"Image Shape: {test_images.shape}")
+print(f"Label Shape: {test_labels.shape}")
 
-
-'''
-#create the CNN model
+#CNN model
 model = models.Sequential()
-model.add(layers.Conv2D(32, (3,3), activation='relu', input_shape=(32,32,3)))
-model.add(layers.MaxPooling2D(2,2))
-model.add(layers.Conv2D(64, (3,3), activation='relu'))
-model.add(layers.MaxPooling2D(2,2))
-model.add(layers.Conv2D(64, (3,3), activation='relu'))
+model.add(layers.Conv2D(16, (3, 3),padding='same', activation='relu', input_shape=(50, 200, 3)))
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Conv2D(16, (3, 3),padding='same', activation='relu'))
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Conv2D(16, (3, 3),padding='same', activation='relu'))
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Conv2D(16, (3, 3),padding='same', activation='relu'))
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.MaxPooling2D((2, 2)))
 model.add(layers.Flatten())
-model.add(layers.Dense(64, activation='relu'))
-model.add(layers.Dense(10))
+model.add(layers.Dense(1500, activation='relu'))
+model.add(layers.Dropout(0.4))
+model.add(layers.Dense(5 * 21, activation='softmax'))
+model.add(layers.Reshape((5, 21)))
 
-#compile and train the model
-model.compile(optimizer='adam', loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), metrics=['accuracy'])
-history = model.fit(train_images, train_labels, epochs=10, validation_data=(test_images, test_labels))
+#extra summary for sizes of each layer when debugging
+model.summary()
+
+#compile and train model
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+history = model.fit(train_images, train_labels, epochs=50, validation_data=(test_images, test_labels))
 
 #evaluate the model
 plt.plot(history.history['accuracy'], label='accuracy')
@@ -97,5 +120,5 @@ plt.ylim([0.5, 1])
 plt.legend(loc = 'lower right')
 test_loss, test_acc = model.evaluate(test_images, test_labels, verbose=2)
 print(test_acc)
-'''
+
 
