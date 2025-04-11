@@ -28,6 +28,7 @@ import os
 import numpy as np
 import cv2 
 from sklearn.model_selection import train_test_split
+from tensorflow.keras.optimizers import Adam
 
 #get the dataset path and set up a way to access the image files
 #if you download from our Github repo - unzip and make sure the extra sample folder is deleted before pasting your directory here
@@ -40,13 +41,21 @@ image_files = [os.path.join(data_dir, f) for f in os.listdir(data_dir) if f.ends
 unrefined_labels = [img_path.split('C:/Users/brean/Documents/captcha_samples\\')[-1] for img_path in image_files] #removes front part of string
 labels = [img_path.split('.')[0] for img_path in unrefined_labels] #removes the last .png at the end to get only the char ID of image
 
+#trying to process the characters better
+characters = set(char for label in labels for char in label)
+num_characters = sorted(list(characters))
+print("Characters present: ", characters)
+print("Number of unique characters: ", len(characters))
+
 #OneHot Encoding to make labels that fit the model input requirement of numerical data instead of strings
 label_size = 5
 enc = tf.keras.layers.TextVectorization(split="character", output_mode="int")
 enc.adapt(labels)
 #print vocab to check that encoder is working
 print(dict((str(v), k) for k,v in enumerate(enc.get_vocabulary())))
-vocab_size = len(enc.get_vocabulary())
+vocab_size = len(enc.get_vocabulary()) #original but gave 21 when unique is 19
+#vocab_size = 19  #spyder didnt like this?
+#print(f"Vocab_size = {vocab_size}")
 print("Original Labels:")
 print(labels[:2])
 Y = enc(labels)
@@ -65,7 +74,8 @@ def load_and_preprocess_images(image_files):
   for img_path in image_files:
     img = cv2.imread(img_path)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # Convert from BGR to RGB
-    #img = img.astype('float32') / 255.0  # Normalize pixel values
+    img = cv2.resize(img, (200, 50))  # Resize to match input shape, even tho most pics should already be at this level
+    img = img.astype('float32') / 255.0  # Normalize pixel values
     images.append(img)
   return np.array(images)
 #use ^ to turn image file path to image data in a numpy array
@@ -89,27 +99,33 @@ print(f"Label Shape: {test_labels.shape}")
 
 #CNN model
 model = models.Sequential()
-model.add(layers.Conv2D(16, (3, 3),padding='same', activation='relu', input_shape=(50, 200, 3)))
+model.add(layers.Conv2D(32, (3, 3),padding='same', activation='relu', input_shape=(50, 200, 3))) #changed from 16 to 32 for all CNN cov layers
 model.add(layers.MaxPooling2D((2, 2)))
-model.add(layers.Conv2D(16, (3, 3),padding='same', activation='relu'))
+model.add(layers.Dropout(0.3)) 
+model.add(layers.Conv2D(64, (3, 3),padding='same', activation='relu'))
 model.add(layers.MaxPooling2D((2, 2)))
-model.add(layers.Conv2D(16, (3, 3),padding='same', activation='relu'))
+#model.add(layers.Dropout(0.3)) #new
+model.add(layers.Conv2D(64, (3, 3),padding='same', activation='relu'))
 model.add(layers.MaxPooling2D((2, 2)))
-model.add(layers.Conv2D(16, (3, 3),padding='same', activation='relu'))
+model.add(layers.Conv2D(64, (3, 3),padding='same', activation='relu'))
 model.add(layers.MaxPooling2D((2, 2)))
-model.add(layers.MaxPooling2D((2, 2)))
+#model.add(layers.MaxPooling2D((2, 2))) #not sure why there was double pooling here
 model.add(layers.Flatten())
-model.add(layers.Dense(1500, activation='relu'))
-model.add(layers.Dropout(0.4))
-model.add(layers.Dense(5 * 21, activation='softmax'))
-model.add(layers.Reshape((5, 21)))
+model.add(layers.Dropout(0.5)) #move dropout to here
+model.add(layers.Dense(1100, activation='relu')) #was 500 and gave 80,40; 800 gave 90, 40 at 40 and 60 epochs; raised to 900
+#model.add(layers.Dropout(0.5)) 
+#model.add(layers.Dense(500, activation='relu')) #added another dense
+#model.add(layers.Dense(500, activation='relu')) #added another dense
+model.add(layers.Dropout(0.5))  #added another dropout
+model.add(layers.Dense(5 * vocab_size, activation='softmax')) #changed 21 to vocab_size {which should be 19 based on number of char shown}
+model.add(layers.Reshape((5, vocab_size)))
 
 #extra summary for sizes of each layer when debugging
 model.summary()
 
 #compile and train model
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-history = model.fit(train_images, train_labels, epochs=50, validation_data=(test_images, test_labels))
+history = model.fit(train_images, train_labels, epochs=40, validation_data=(test_images, test_labels))
 
 #evaluate the model
 plt.plot(history.history['accuracy'], label='accuracy')
