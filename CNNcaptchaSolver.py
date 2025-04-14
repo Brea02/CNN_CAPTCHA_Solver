@@ -10,16 +10,8 @@ Objective: In this assignment, you will implement a Convolutional Neural Network
 CAPTCHA recognition problems. 
 Using Kaggle dataset available in the Github repository
 
-Currently:
-    dataset is incorporated, images and labels are separated and usable
-    model and accuracy plot at the end works with dataset
-Needs:
-    val_accuracy is still low {~0.50 on high end}, so need to mess with model for better accuracy
-    fix overfitting
-    Achieve approximately 80% accuracy on the test set -- listed in assignment
-    rewrite some code to make it easier for other computers to use{or a lot of comments}
-    fix-up the samples for easier loading?
 """
+
 #import needed libraries
 import tensorflow as tf
 from tensorflow.keras import datasets, layers, models
@@ -92,6 +84,7 @@ plt.imshow(train_images[0])
 plt.axis('off')
 plt.show()
 print(f"Label: {train_labels[0]}")
+print(f"Check if the original label only has 5 characters: {labels[0]}")
 
 #look at the shape of the images and labels for correct model size adjustment
 print(f"Image Shape: {test_images.shape}")
@@ -101,31 +94,26 @@ print(f"Label Shape: {test_labels.shape}")
 model = models.Sequential()
 model.add(layers.Conv2D(32, (3, 3),padding='same', activation='relu', input_shape=(50, 200, 3))) #changed from 16 to 32 for all CNN cov layers
 model.add(layers.MaxPooling2D((2, 2)))
-model.add(layers.Dropout(0.3)) 
-model.add(layers.Conv2D(64, (3, 3),padding='same', activation='relu'))
-model.add(layers.MaxPooling2D((2, 2)))
-#model.add(layers.Dropout(0.3)) #new
+model.add(layers.Dropout(0.3))
 model.add(layers.Conv2D(64, (3, 3),padding='same', activation='relu'))
 model.add(layers.MaxPooling2D((2, 2)))
 model.add(layers.Conv2D(64, (3, 3),padding='same', activation='relu'))
 model.add(layers.MaxPooling2D((2, 2)))
-#model.add(layers.MaxPooling2D((2, 2))) #not sure why there was double pooling here
+model.add(layers.Conv2D(64, (3, 3),padding='same', activation='relu'))
+model.add(layers.MaxPooling2D((2, 2)))
 model.add(layers.Flatten())
-model.add(layers.Dropout(0.5)) #move dropout to here
-model.add(layers.Dense(1100, activation='relu')) #was 500 and gave 80,40; 800 gave 90, 40 at 40 and 60 epochs; raised to 900
-#model.add(layers.Dropout(0.5)) 
-#model.add(layers.Dense(500, activation='relu')) #added another dense
-#model.add(layers.Dense(500, activation='relu')) #added another dense
-model.add(layers.Dropout(0.5))  #added another dropout
-model.add(layers.Dense(5 * vocab_size, activation='softmax')) #changed 21 to vocab_size {which should be 19 based on number of char shown}
+model.add(layers.Dropout(0.5))
+model.add(layers.Dense(1100, activation='relu')) 
+model.add(layers.Dropout(0.5))
+model.add(layers.Dense(5 * vocab_size, activation='softmax')) 
 model.add(layers.Reshape((5, vocab_size)))
 
 #extra summary for sizes of each layer when debugging
 model.summary()
 
 #compile and train model
-model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-history = model.fit(train_images, train_labels, epochs=40, validation_data=(test_images, test_labels))
+model.compile(optimizer=Adam(learning_rate=0.001), loss='categorical_crossentropy', metrics=['accuracy']) #keep lr at 0.001
+history = model.fit(train_images, train_labels, epochs=60, validation_data=(test_images, test_labels))
 
 #evaluate the model
 plt.plot(history.history['accuracy'], label='accuracy')
