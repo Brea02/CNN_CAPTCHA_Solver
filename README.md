@@ -36,12 +36,16 @@ print(f"Check if the original label only has 5 characters: {labels[0]}")
 ```
 
 # Preparing Dataset
-OneHot Encoding was used to convert the labels from String data to Numerical data which is required for the model to work. 
+OneHot Encoding was used to convert the labels from String data to Numerical data which is required for the model to work.
 ```python
 enc = tf.keras.layers.TextVectorization(split="character", output_mode="int")
 enc.adapt(labels)
 Y = enc(labels)
 Y = tf.keras.utils.to_categorical(Y, num_classes=vocab_size)
+```
+It should also be noted of a line that turns Y into a numpy array. In some program,s this is required, but others show an error when it is uncommented. 
+```python
+#Y = Y.numpy() #for some reason Google Colab needed this line, but Spyder didnt. If your program throws a fit about no numpy array then uncomment this
 ```
 The dataset images were separated in an 85:15 format by sklearn train_test_split.
 ```python
