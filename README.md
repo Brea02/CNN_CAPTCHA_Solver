@@ -43,7 +43,7 @@ enc.adapt(labels)
 Y = enc(labels)
 Y = tf.keras.utils.to_categorical(Y, num_classes=vocab_size)
 ```
-It should also be noted of a line that turns Y into a numpy array. In some program,s this is required, but others show an error when it is uncommented. 
+It should also be noted there is a line that turns Y into a numpy array that may need to be commented out. In some programs, this is required, but others show an error when it is uncommented. 
 ```python
 #Y = Y.numpy() #for some reason Google Colab needed this line, but Spyder didnt. If your program throws a fit about no numpy array then uncomment this
 ```
