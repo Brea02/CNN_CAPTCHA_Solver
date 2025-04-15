@@ -5,7 +5,6 @@ A Google Colab version of this code can be found [here](https://colab.research.g
 
 # Required Libraries
 This program mainly utilizes Tensorflow and Keras to create the CNN model. The dataset was prepared using os, numpy, cv2, and sklearn test_train_split libraries. Lastly matplotlib is used to evaluate the model at the end.
-{put a pic of the code here}
 
 
 ```python
@@ -68,8 +67,37 @@ test_images = load_and_preprocess_images(test_images)
 
 # CNN Model
 The CNN model uses Conv2D and MaxPooling2D layers with ReLU activation and varying numbers of neuron layers. Two Dense layers are found at the end of the model, with the output layer using SoftMax activation. A Reshape was performed at the end to allow the model to be compiled. Dropout layers are added throughout the model to increase test accuracy and decrease overfitting. Finally, the model was compiled with Adam optimizer and categorical_crossentropy. 
+```python
+model = models.Sequential()
+model.add(layers.Conv2D(32, (3, 3),padding='same', activation='relu', input_shape=(50, 200, 3))) 
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Dropout(0.3))
+model.add(layers.Conv2D(64, (3, 3),padding='same', activation='relu'))
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Conv2D(64, (3, 3),padding='same', activation='relu'))
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Conv2D(64, (3, 3),padding='same', activation='relu'))
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Flatten())
+model.add(layers.Dropout(0.5))
+model.add(layers.Dense(1100, activation='relu')) 
+model.add(layers.Dropout(0.5))  
+model.add(layers.Dense(5 * vocab_size, activation='softmax'))
+model.add(layers.Reshape((5, vocab_size)))
+```
 
 The last part of the code evaluates the model and creates a plot of the history of the model's accuracy.
+```python
+#evaluate the model
+plt.plot(history.history['accuracy'], label='accuracy')
+plt.plot(history.history['val_accuracy'], label = 'val_accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.ylim([0.5, 1])
+plt.legend(loc = 'lower right')
+test_loss, test_acc = model.evaluate(test_images, test_labels, verbose=2)
+print(test_acc)
+```
 
-More information on the code can be found in [this](https://docs.google.com/document/d/1YlM90TS1Gtl0f2s4XiIYO7UiDbk4YIwRos8SF7NQRVA/edit?tab=t.0) google doc report on the program or in (this video)[https://drive.google.com/file/d/1AGKvhXdwmaORMwHu-TmE5ie2Em9jmBXy/view?usp=sharing] located in my google drive. 
+More information on the code can be found in [this](https://docs.google.com/document/d/1YlM90TS1Gtl0f2s4XiIYO7UiDbk4YIwRos8SF7NQRVA/edit?tab=t.0) google doc report on the program or in [this video](https://drive.google.com/file/d/1AGKvhXdwmaORMwHu-TmE5ie2Em9jmBXy/view?usp=sharing) located in my google drive. 
 
