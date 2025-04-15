@@ -71,5 +71,5 @@ The CNN model uses Conv2D and MaxPooling2D layers with ReLU activation and varyi
 
 The last part of the code evaluates the model and creates a plot of the history of the model's accuracy.
 
-More information on the code can be found in [this](https://docs.google.com/document/d/1YlM90TS1Gtl0f2s4XiIYO7UiDbk4YIwRos8SF7NQRVA/edit?tab=t.0) google doc report on the program.
+More information on the code can be found in [this](https://docs.google.com/document/d/1YlM90TS1Gtl0f2s4XiIYO7UiDbk4YIwRos8SF7NQRVA/edit?tab=t.0) google doc report on the program or in (this video)[https://drive.google.com/file/d/1AGKvhXdwmaORMwHu-TmE5ie2Em9jmBXy/view?usp=sharing] located in my google drive. 
 
